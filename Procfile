@@ -1,1 +1,1 @@
-cinch: bundle exec ./beerbot.rb
+cinch: bundle exec ruby ./beerbot.rb
