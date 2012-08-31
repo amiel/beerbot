@@ -1,6 +1,6 @@
 require 'cinch'
 require 'data_mapper'
-require 'dm-sqlite-adapter'
+#require 'dm-sqlite-adapter'
 require 'dm-postgres-adapter'
 
 class BeerBot

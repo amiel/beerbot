@@ -4,5 +4,5 @@ gem "cinch"
 gem "heroku"
 
 gem "data_mapper"
-gem "dm-sqlite-adapter"
+#gem "dm-sqlite-adapter"
 gem "dm-postgres-adapter"
