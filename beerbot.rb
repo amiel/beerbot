@@ -67,7 +67,7 @@ bot = Cinch::Bot.new do
   on :message, /.*who owes me.*(beer|beverages|drink).*/i do |m|
     status = BeerBot.status m.user.nick
 
-    if status
+    if status.size > 0
       m.reply status.map{ |round| "#{round.sender} (#{round.count})"}.join(', ')
     else
       m.reply 'No one owes you beer. You should really be nicer to people.'
