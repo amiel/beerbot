@@ -86,7 +86,8 @@ end
 # Initialization
 DataMapper.finalize
 
-DataMapper.setup(:default, (ENV["DATABASE_URL"] || "sqlite3:///#{Dir.pwd}/development.sqlite3"))
+#DataMapper.setup(:default, (ENV["DATABASE_URL"] || "sqlite3:///#{Dir.pwd}/development.sqlite3"))
+DataMapper.setup(:default, ENV["DATABASE_URL"])
 DataMapper.auto_upgrade!
 
 bot.start
