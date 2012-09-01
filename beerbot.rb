@@ -1,6 +1,10 @@
+if ENV["HEROKU_POSTGRESQL_AQUA_URL"]
+  production = true
+end
+
 require 'cinch'
 require 'data_mapper'
-#require 'dm-sqlite-adapter'
+require 'dm-sqlite-adapter' unless production
 require 'dm-postgres-adapter'
 
 class BeerBot
@@ -28,13 +32,31 @@ class BeerBot
   def self.status nick
     return self.all(:recipient => nick, :count.gt => 0)
   end
+
+  def self.mood
+    require 'nokogiri'
+    require 'open-uri'
+
+    doc = Nokogiri::HTML(open('http://umbrellatoday.com/locations/240045947/forecast'))
+
+    response = doc.css('section.content h3 span').first.content
+    puts response
+
+    if response == 'YES'
+      'foul'
+    else
+      'good'
+    end
+  end
 end
+
+mood = BeerBot.mood
 
 bot = Cinch::Bot.new do
   configure do |c|
     c.nick = "beerbot"
     c.server = "irc.oftc.net"
-    c.channels = ["#bhamruby"]
+    c.channels = ["#beerbot"]
   end
 
   # Add a drink
@@ -44,9 +66,11 @@ bot = Cinch::Bot.new do
     round = BeerBot.add_beer m.user.nick, recipient
 
     if round > 1
-      m.reply "Got it, #{m.user.nick}. You owe a #{round} drinks to #{recipient}. Better get buying."
+      m.reply "Got it, #{m.user.nick}. You owe a #{round} drinks to #{recipient}. Better get buying." if mood == 'good'
+      m.reply "Fine, #{m.user.nick}. You owe a #{round} drinks to #{recipient}. Dumbass." if mood == 'foul'
     else
-      m.reply "Duly noted, #{m.user.nick}. You owe a delicious beverage to #{recipient}."
+      m.reply "Duly noted, #{m.user.nick}. You owe a delicious beverage to #{recipient}." if mood == 'good'
+      m.reply "Not sure what #{recipient} did to deserve it, but you better pay up, #{m.user.nick}. I hate you both." if mood == 'foul'
     end
   end
 
@@ -57,9 +81,11 @@ bot = Cinch::Bot.new do
     round = BeerBot.cash_in sender, m.user.nick
 
     if round
-      m.reply "Glad to see #{sender} isn't as much of a deadbeat as I thought."
+      m.reply "Glad to see #{sender} isn't as much of a deadbeat as I thought." if mood == 'good'
+      m.reply "Hopefully that drink numbed the crushing emotional pain of being you, #{m.user.nick}." if mood == 'foul'
     else
-      m.reply "Well this is awkward. #{sender} didn't owe you anything. Poor lifestyle choices all around."
+      m.reply "Well this is awkward. #{sender} didn't owe you anything. We all make mistakes." if mood == 'good'
+      m.reply "What the hell is wrong with you people. #{sender} didn't owe you fuckall. Poor lifestyle choices all around." if mood == 'foul'
     end
   end
 
@@ -70,7 +96,8 @@ bot = Cinch::Bot.new do
     if status.size > 0
       m.reply status.map{ |round| "#{round.sender} (#{round.count})"}.join(', ')
     else
-      m.reply 'No one owes you beer. You should really be nicer to people.'
+      m.reply 'No one owes you beer. You should really be nicer to people.' if mood == 'good'
+      m.reply 'No one owes you beer, and no one likes you. You\'ll die alone.' if mood == 'foul'
     end
   end
 
@@ -86,7 +113,12 @@ end
 # Initialization
 DataMapper.finalize
 
-DataMapper.setup(:default, (ENV["HEROKU_POSTGRESQL_AQUA_URL"] || "sqlite3:///#{Dir.pwd}/development.sqlite3"))
+if production
+  DataMapper.setup(:default, ENV["HEROKU_POSTGRESQL_AQUA_URL"])
+else
+  DataMapper.setup(:default, "sqlite3:///#{Dir.pwd}/development.sqlite3")
+end
+
 DataMapper.auto_upgrade!
 
 bot.start

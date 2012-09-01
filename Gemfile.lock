@@ -35,6 +35,9 @@ GEM
       dm-core (~> 1.0.2)
       fastercsv (~> 1.5.3)
       json_pure (~> 1.4)
+    dm-sqlite-adapter (1.0.2)
+      dm-do-adapter (~> 1.0.2)
+      do_sqlite3 (~> 0.10.2)
     dm-timestamps (1.0.2)
       dm-core (~> 1.0.2)
     dm-transactions (1.0.2)
@@ -48,6 +51,8 @@ GEM
     dm-validations (1.0.2)
       dm-core (~> 1.0.2)
     do_postgres (0.10.8)
+      data_objects (= 0.10.8)
+    do_sqlite3 (0.10.8)
       data_objects (= 0.10.8)
     excon (0.16.2)
     extlib (0.9.15)
@@ -65,6 +70,7 @@ GEM
       addressable (~> 2.3)
     mime-types (1.19)
     netrc (0.7.7)
+    nokogiri (1.5.5)
     rest-client (1.6.7)
       mime-types (>= 1.16)
     rubyzip (0.9.9)
@@ -78,4 +84,6 @@ DEPENDENCIES
   cinch
   data_mapper
   dm-postgres-adapter
+  dm-sqlite-adapter
   heroku
+  nokogiri
