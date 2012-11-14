@@ -95,10 +95,10 @@ bot = Cinch::Bot.new do
 
   # Pass it around
   on :message, /.*who owes me.*(beer|beverages|drink).*/i do |m|
-    owes = BeerBot.owes m.user.nick
+    owed = BeerBot.owed m.user.nick
 
-    if owes.size > 0
-      m.reply owes.map{ |round| "#{round.sender} (#{round.count})"}.join(', ')
+    if owed.size > 0
+      m.reply owed.map{ |round| "#{round.sender} (#{round.count})"}.join(', ')
     else
       m.reply 'No one owes you beer. You should really be nicer to people.' if mood == 'good'
       m.reply 'No one owes you beer, and no one likes you. You\'ll die alone.' if mood == 'foul'
@@ -106,10 +106,10 @@ bot = Cinch::Bot.new do
   end
 
   on :message, /.*who do i owe.*(beer|beverages|drink).*/i do |m|
-    owed = BeerBot.owed m.user.nick
+    owes = BeerBot.owes m.user.nick
 
-    if owed.size > 0
-      m.reply owed.map{ |round| "#{round.sender} (#{round.count})"}.join(', ')
+    if owes.size > 0
+      m.reply owes.map{ |round| "#{round.sender} (#{round.count})"}.join(', ')
     else
       m.reply 'You don\'t owe anyone a beverage. Maybe you should share more.' if mood == 'good'
       m.reply 'No one. As it should be.' if mood == 'foul'
