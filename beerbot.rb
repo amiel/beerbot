@@ -47,8 +47,7 @@ bot = Cinch::Bot.new do
   configure do |c|
     c.nick = "beerbot"
     c.server = "irc.oftc.net"
-    #c.channels = ["#bhamruby", "#beerbot"]
-    c.channels = ["#beerbot"]
+    c.channels = ["#bhamruby"]
 
     DRINKS = 'beer|pint|drink|beverage|scotch|whiskey|martini'
 
