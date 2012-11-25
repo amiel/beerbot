@@ -66,6 +66,14 @@ bot = Cinch::Bot.new do
         'many'
       end
     end
+
+    def reply_with_list list, fallback
+      if list.size > 0
+        list.map{ |round| "#{round.sender} (#{round.count})"}.join(', ')
+      else
+        fallback
+      end
+    end
   end
 
   # Add a drink
@@ -78,7 +86,6 @@ bot = Cinch::Bot.new do
   # Take one down
   on :message, /(\S*) (paid up|(bought.*(#{DRINKS}))).*/i do |m|
     sender = m.message.match(/(\S*) (paid up|(bought.*(#{DRINKS}))).*/i)[1]
-
     round = BeerBot.cash_in sender, m.user.nick
 
     if round
@@ -91,22 +98,12 @@ bot = Cinch::Bot.new do
   # Pass it around
   on :message, /.*who owes me.*(#{DRINKS}).*/i do |m|
     owed = BeerBot.owed m.user.nick
-
-    if owed.size > 0
-      m.reply owed.map{ |round| "#{round.sender} (#{round.count})"}.join(', ')
-    else
-      I18n.t("status.none")
-    end
+    m.reply reply_with_list(owed, I18n.t("status.none"))
   end
 
   on :message, /.*who do i owe.*(#{DRINKS}).*/i do |m|
     owes = BeerBot.owes m.user.nick
-
-    if owes.size > 0
-      m.reply owes.map{ |round| "#{round.sender} (#{round.count})"}.join(', ')
-    else
-      m.reply I18n.t('owes.none')
-    end
+    m.reply reply_with_list(owes, I18n.t("owes.none"))
   end
 
   # Help
@@ -116,7 +113,6 @@ bot = Cinch::Bot.new do
     m.reply 'You can see who owes you drinks by saying "Who owes me drinks?"'
   end
 end
-
 
 # Initialization
 DataMapper.finalize
