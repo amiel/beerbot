@@ -6,25 +6,27 @@ require 'cinch'
 require 'data_mapper'
 require 'dm-sqlite-adapter' unless production
 require 'dm-postgres-adapter'
+require 'i18n'
 
 class BeerBot
   include DataMapper::Resource
-  property :id, Integer, serial: true
+  property :id, Serial
   property :sender, String
   property :recipient, String
-  property :count, Integer, default: 0
+  property :reason, String
+  property :count, Integer, :default => 0
 
   def self.add_beer sender, recipient
-    round = self.first_or_create(sender: sender, recipient: recipient)
-    round.update(count: round.count + 1)
+    round = self.first_or_create(:sender => sender, :recipient => recipient)
+    round.update(:count => round.count + 1)
 
     round.count
   end
 
   def self.cash_in sender, recipient
-    round = self.first_or_create(sender: sender, recipient: recipient)
+    round = self.first_or_create(:sender => sender, :recipient => recipient)
     return false unless round.count > 0
-    round.update(count: round.count - 1)
+    round.update(:count => round.count - 1)
 
     round.count
   end
@@ -44,7 +46,6 @@ class BeerBot
     doc = Nokogiri::HTML(open('http://umbrellatoday.com/locations/240045947/forecast'))
 
     response = doc.css('section.content h3 span').first.content
-    puts response
 
     if response == 'YES'
       'foul'
@@ -54,72 +55,78 @@ class BeerBot
   end
 end
 
-mood = BeerBot.mood
 
 bot = Cinch::Bot.new do
   configure do |c|
     c.nick = "beerbot"
     c.server = "irc.oftc.net"
-    c.channels = ["#bhamruby", "#beerbot"]
+    #c.channels = ["#bhamruby", "#beerbot"]
+    c.channels = ["#beerbot"]
+
+    DRINKS = 'beer|drink|beverage|scotch|whiskey|martini'
+
+    I18n.load_path = ['responses.yml']
+    I18n.default_locale = BeerBot.mood
   end
 
-  # Add a drink
-  on :message, /.*i owe (\S*) a (beer|drink).*/i do |m|
-    recipient = m.message.match(/.*i owe (.*) a (beer|drink|beverage).*/i)[1]
-
-    round = BeerBot.add_beer m.user.nick, recipient
-
-    if round > 1
-      m.reply "Got it, #{m.user.nick}. You owe a #{round} drinks to #{recipient}. Better get buying." if mood == 'good'
-      m.reply "Fine, #{m.user.nick}. You owe a #{round} drinks to #{recipient}. Dumbass." if mood == 'foul'
-    else
-      m.reply "Duly noted, #{m.user.nick}. You owe a delicious beverage to #{recipient}." if mood == 'good'
-      m.reply "Not sure what #{recipient} did to deserve it, but you better pay up, #{m.user.nick}. I hate you both." if mood == 'foul'
+  helpers do
+    def quantity number
+      if number == 0
+        'none'
+      elsif number == 1
+        'one'
+      else
+        'many'
+      end
     end
   end
 
+  # Add a drink
+  on :message, /.*i owe (\S*) a (#{DRINKS}).*/i do |m|
+
+    recipient = m.message.match(/.*i owe (.*) a (#{DRINKS}).*/i)[1]
+    round = BeerBot.add_beer m.user.nick, recipient
+    m.reply I18n.t("add.#{quantity(round)}", :nick => m.user.nick, :round => round, :recipient => recipient)
+  end
+
   # Take one down
-  on :message, /(\S*) (paid up|(bought.*(beer|drink|beverage))).*/i do |m|
-    sender = m.message.match(/(\S*) (paid up|(bought.*(beer|drink|beverage))).*/i)[1]
+  on :message, /(\S*) (paid up|(bought.*(#{DRINKS}))).*/i do |m|
+    sender = m.message.match(/(\S*) (paid up|(bought.*(#{DRINKS}))).*/i)[1]
 
     round = BeerBot.cash_in sender, m.user.nick
 
     if round
-      m.reply "Glad to see #{sender} isn't as much of a deadbeat as I thought." if mood == 'good'
-      m.reply "Hopefully that drink numbed the crushing emotional pain of being you, #{m.user.nick}." if mood == 'foul'
+      m.reply I18n.t("redeem.success")
     else
-      m.reply "Well this is awkward. #{sender} didn't owe you anything. We all make mistakes." if mood == 'good'
-      m.reply "What the hell is wrong with you people. #{sender} didn't owe you fuckall. Poor lifestyle choices all around." if mood == 'foul'
+      m.reply I18n.t("redeem.failure")
     end
   end
 
   # Pass it around
-  on :message, /.*who owes me.*(beer|beverages|drink).*/i do |m|
+  on :message, /.*who owes me.*(#{DRINKS}).*/i do |m|
     owed = BeerBot.owed m.user.nick
 
     if owed.size > 0
       m.reply owed.map{ |round| "#{round.sender} (#{round.count})"}.join(', ')
     else
-      m.reply 'No one owes you beer. You should really be nicer to people.' if mood == 'good'
-      m.reply 'No one owes you beer, and no one likes you. You\'ll die alone.' if mood == 'foul'
+      I18n.t("status.none")
     end
   end
 
-  on :message, /.*who do i owe.*(beer|beverages|drink).*/i do |m|
+  on :message, /.*who do i owe.*(#{DRINKS}).*/i do |m|
     owes = BeerBot.owes m.user.nick
 
     if owes.size > 0
       m.reply owes.map{ |round| "#{round.sender} (#{round.count})"}.join(', ')
     else
-      m.reply 'You don\'t owe anyone a beverage. Maybe you should share more.' if mood == 'good'
-      m.reply 'No one. As it should be.' if mood == 'foul'
+      m.reply I18n.t('owes.none')
     end
   end
 
   # Help
   on :message, /beerbot.*(help|que|wtf).*/i do |m|
     m.reply 'You officially decree you owe someone a frosty one by saying "I owe a beer to johnnyawesome" or "Whelp, I really owe huntersthompson a drink after that one."'
-    m.reply 'If you\'ve gotten your drink, you can say "mrdudeman bought me a drink"'
+    m.reply 'If you have gotten your drink, you can say "mrdudeman bought me a drink"'
     m.reply 'You can see who owes you drinks by saying "Who owes me drinks?"'
   end
 end

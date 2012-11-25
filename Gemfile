@@ -3,6 +3,8 @@ source "https://rubygems.org"
 gem "cinch"
 gem "heroku"
 
+gem "i18n"
+
 gem "data_mapper"
 
 gem "dm-postgres-adapter"

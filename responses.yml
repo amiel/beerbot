@@ -1,0 +1,23 @@
+good:
+  add:
+    one: "Duly noted, %{nick}. You owe a delicious beverage to %{recipient}."
+    many: "Got it, %{nick}. You owe %{round} drinks to %{recipient}. Better get buying."
+  redeem:
+    success: "Glad to see %{sender} isn't as much of a deadbeat as I thought."
+    failure: "Well this is awkward. %{sender} didn't owe you anything. We all make mistakes."
+  status:
+    none: "No one owes you beer. You should really be nicer to people."
+  owes:
+    none: "You don't owe anyone a beverage. Maybe you should share more."
+
+foul:
+  add:
+    one: "Not sure what %{recipient} did to deserve it, but you better pay up, %{nick}. I hate you both."
+    many: "Fine, %{nick}. You owe %{round} drinks to %{recipient}. Dumbass."
+  redeem:
+    success: "Hopefully that drink numbed the crushing emotional pain of being you, %{recipient}."
+    failure: "What the hell is wrong with you people. %{sender} didn't owe you fuckall. Poor lifestyle choices all around."
+  status:
+    none: "No one owes you beer, and no one likes you. You'll die alone."
+  owes:
+    none: "No one. As it should be."
