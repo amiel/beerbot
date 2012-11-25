@@ -1,25 +1,20 @@
-if ENV["HEROKU_POSTGRESQL_AQUA_URL"]
-  production = true
-end
-
 require 'cinch'
 require 'data_mapper'
-require 'dm-sqlite-adapter' unless production
 require 'dm-postgres-adapter'
 require 'i18n'
+require 'nokogiri'
+require 'open-uri'
 
 class BeerBot
   include DataMapper::Resource
   property :id, Serial
   property :sender, String
   property :recipient, String
-  property :reason, String
   property :count, Integer, :default => 0
 
   def self.add_beer sender, recipient
     round = self.first_or_create(:sender => sender, :recipient => recipient)
     round.update(:count => round.count + 1)
-
     round.count
   end
 
@@ -40,18 +35,10 @@ class BeerBot
   end
 
   def self.mood
-    require 'nokogiri'
-    require 'open-uri'
-
     doc = Nokogiri::HTML(open('http://umbrellatoday.com/locations/240045947/forecast'))
 
     response = doc.css('section.content h3 span').first.content
-
-    if response == 'YES'
-      'foul'
-    else
-      'good'
-    end
+    response == "YES" ? 'foul' : 'good'
   end
 end
 
@@ -63,7 +50,7 @@ bot = Cinch::Bot.new do
     #c.channels = ["#bhamruby", "#beerbot"]
     c.channels = ["#beerbot"]
 
-    DRINKS = 'beer|drink|beverage|scotch|whiskey|martini'
+    DRINKS = 'beer|pint|drink|beverage|scotch|whiskey|martini'
 
     I18n.load_path = ['responses.yml']
     I18n.default_locale = BeerBot.mood
@@ -83,7 +70,6 @@ bot = Cinch::Bot.new do
 
   # Add a drink
   on :message, /.*i owe (\S*) a (#{DRINKS}).*/i do |m|
-
     recipient = m.message.match(/.*i owe (.*) a (#{DRINKS}).*/i)[1]
     round = BeerBot.add_beer m.user.nick, recipient
     m.reply I18n.t("add.#{quantity(round)}", :nick => m.user.nick, :round => round, :recipient => recipient)
@@ -96,9 +82,9 @@ bot = Cinch::Bot.new do
     round = BeerBot.cash_in sender, m.user.nick
 
     if round
-      m.reply I18n.t("redeem.success")
+      m.reply I18n.t("redeem.success", :sender => sender)
     else
-      m.reply I18n.t("redeem.failure")
+      m.reply I18n.t("redeem.failure", :sender => sender)
     end
   end
 
@@ -134,13 +120,7 @@ end
 
 # Initialization
 DataMapper.finalize
-
-if production
-  DataMapper.setup(:default, ENV["HEROKU_POSTGRESQL_AQUA_URL"])
-else
-  DataMapper.setup(:default, "sqlite3:///#{Dir.pwd}/development.sqlite3")
-end
-
+DataMapper.setup(:default, ENV["HEROKU_POSTGRESQL_AQUA_URL"])
 DataMapper.auto_upgrade!
 
 bot.start
