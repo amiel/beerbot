@@ -52,6 +52,9 @@ bot = Cinch::Bot.new do
     DRINKS = 'beer|pint|drink|beverage|scotch|whiskey|martini'
 
     I18n.load_path = ['responses.yml']
+    
+    # I would call update_mood here, but I don't know if helpers are available,
+    # and I'm not testing this pull-request :P
     I18n.default_locale = BeerBot.mood
   end
 
@@ -72,6 +75,10 @@ bot = Cinch::Bot.new do
       else
         fallback
       end
+    end
+    
+    def update_mood
+      I18n.default_locale = BeerBot.mood
     end
   end
 
@@ -110,6 +117,10 @@ bot = Cinch::Bot.new do
     m.reply 'You officially decree you owe someone a frosty one by saying "I owe a beer to johnnyawesome" or "Whelp, I really owe huntersthompson a drink after that one."'
     m.reply 'If you have gotten your drink, you can say "mrdudeman bought me a drink"'
     m.reply 'You can see who owes you drinks by saying "Who owes me drinks?"'
+  end
+  
+  on :message, /beerbot.*update.*/i do |m|
+    update_mood
   end
 end
 
